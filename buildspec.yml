@@ -10,25 +10,32 @@ env:
 phases:
   install:
     commands:
-      - echo "Check aws and git version"
+      - echo "Check aws, docker, docker-compose and git version"
       - aws --version
       - git --version
+      - docker --version
+      - docker-compose --version
 
   pre_build:
     commands:
       - echo "Login to AWS ECR and get commit id"
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION| docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com
       - COMMIT_ID=$(git rev-parse --short HEAD)
+      - echo COMMIT_ID=$COMMIT_ID
 
   build:
     commands:
-      - echo Building the Docker image...
-      - docker build -t $ECR_REPO_NAME:$ECR_IMAGE_TAG .
+      - echo "Building and tagging Docker images with docker-compose..."
+      - docker-compose -f docker-compose.yml build
       - docker tag $ECR_REPO_NAME:$ECR_IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME:$ECR_IMAGE_TAG
       - docker tag $ECR_REPO_NAME:$ECR_IMAGE_TAG $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME:$COMMIT_ID
 
   post_build:
     commands:
-      - echo Pushing the Docker image...
+      - echo "Pushing the Docker images..."
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME:$ECR_IMAGE_TAG
       - docker push $AWS_ACCOUNT_ID.dkr.ecr.$AWS_DEFAULT_REGION.amazonaws.com/$ECR_REPO_NAME:$COMMIT_ID
+
+artifacts:
+  files:
+    - '**/*'
