@@ -1,0 +1,242 @@
+version: '3'
+services:
+
+  storage.minio:
+    image: minio/minio:latest
+    ports:
+      - "9000:9000"
+      - "9009:9009"
+    volumes:
+      - ./volumes/storages/minio:/data
+    env_file:
+      - .env
+    command: server --console-address :9009 /data
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+
+  consumer.send.email:
+    build: consumers/consumer_send_email
+    volumes:
+      - ./consumers/consumer_send_email:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=consumer.send.email
+    env_file:
+      - .env
+
+  consumer.send.image.sunny:
+    build: consumers/consumer_send_image
+    volumes:
+      - ./consumers/consumer_send_image:/usr/src/app
+      - ./volumes/storages/upload:/usr/src/upload
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=consumer.send.image.sunny
+    env_file:
+      - .env
+
+  consumer.send.image.jonny:
+    build: consumers/consumer_send_image
+    volumes:
+      - ./consumers/consumer_send_image:/usr/src/app
+      - ./volumes/storages/upload:/usr/src/upload
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=consumer.send.image.jonny
+    env_file:
+      - .env
+
+  consumer.send.front:
+    build: consumers/consumer_send_front
+    volumes:
+      - ./consumers/consumer_send_front:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=consumer.SendFront
+    env_file:
+      - .env
+
+  rabbit.mq:
+    image: rabbitmq:3.12.0-management-alpine
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    env_file:
+      - .env
+    networks:
+      - lab325_examples_network
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  socket.sunny:
+    build: ./sockets/socket_instance
+    volumes:
+      - ./sockets/socket_instance:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - redis.socket
+    environment:
+      - SERVER_NAME=socket.sunny
+    env_file:
+      - .env
+
+  socket.jonny:
+    build: ./sockets/socket_instance
+    volumes:
+      - ./sockets/socket_instance:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - redis.socket
+    environment:
+      - SERVER_NAME=socket.jonny
+    env_file:
+      - .env
+
+  socket.admin:
+    build: ./sockets/socket_admin
+    volumes:
+      - ./sockets/socket_admin:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - redis.socket
+    ports:
+      - "3030:3030"
+      - "8080:8080"
+    environment:
+      - SERVER_NAME=socket.admin
+      - SERVER_PORT=3030
+    env_file:
+      - .env
+
+  redis.socket:
+    image: 'redis:alpine'
+    volumes:
+      - './volumes/db/redis/sockets:/data'
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+
+  api.send.email:
+    build: ./api/api_send_email
+    volumes:
+      - ./api/api_send_email:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=api.send.email
+    env_file:
+      - .env
+
+  api.send.image.sunny:
+    build: ./api/api_send_image
+    volumes:
+      - ./api/api_send_image:/usr/src/app
+      - ./volumes/storages/upload:/usr/src/upload
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=api.send.image.sunny
+    env_file:
+      - .env
+
+  api.send.image.jonny:
+    build: ./api/api_send_image
+    volumes:
+      - ./api/api_send_image:/usr/src/app
+      - ./volumes/storages/upload:/usr/src/upload
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    depends_on:
+      - rabbit.mq
+    environment:
+      - SERVER_NAME=api.send.image.jonny
+    env_file:
+      - .env
+
+  front.vue:
+    build: ./front/vue
+    volumes:
+      - ./front/vue:/usr/src/app
+    command: sh -c " npm install && npm start "
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    environment:
+      - NAME=front.Vue
+    env_file:
+      - .env
+
+  nginx:
+    image: nginx:alpine
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    extra_hosts:
+      - 'host.docker.internal:host-gateway'
+    networks:
+      - lab325_examples_network
+    ports:
+      - "80:80"
+    depends_on:
+      - front.vue
+      - api.send.email
+      - api.send.image.sunny
+      - api.send.image.jonny
+      - socket.sunny
+      - socket.jonny
+
+networks:
+  lab325_examples_network:
+    driver: bridge

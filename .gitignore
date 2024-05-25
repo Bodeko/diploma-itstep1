@@ -1,0 +1,15 @@
+# Idea
+.idea
+
+.env
+
+# Docker
+volumes/
+
+# Node
+node_modules/
+
+**/yarn.lock
+**/yarn-error.log
+**/package-lock.json
+
